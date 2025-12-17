@@ -1,0 +1,6 @@
+{
+    "appId": "com.antigravity.dictionary",
+    "appName": "나만의 사전",
+    "webDir": "www",
+    "bundledWebRuntime": false
+}
