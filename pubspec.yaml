@@ -1,22 +1,80 @@
-name: antigravity_dictionary
-description: A new Flutter project.
-publish_to: 'none'
-version: 1.0.0+1
+name: Build Android APK
 
-environment:
-  sdk: '>=3.1.0 <4.0.0'
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
 
-dependencies:
-  flutter:
-    sdk: flutter
-  flutter_tts: ^3.8.3
-  http: ^1.2.0
-  translator: ^1.0.0
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^3.0.0
+    steps:
+    - uses: actions/checkout@v4
 
-flutter:
-  uses-material-design: true
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.0'
+        channel: 'stable'
+
+    - name: Repair Project Structure
+      run: flutter create .
+
+    - name: Overwrite Android Manifest
+      run: |
+        # Force overwrite the AndroidManifest.xml to ensure permissions and label are correct
+        # Using printf to write the content cleanly
+        
+        printf '<?xml version="1.0" encoding="utf-8"?>\n' > android/app/src/main/AndroidManifest.xml
+        printf '<manifest xmlns:android="http://schemas.android.com/apk/res/android"\n' >> android/app/src/main/AndroidManifest.xml
+        printf '    package="com.example.antigravity_dictionary">\n' >> android/app/src/main/AndroidManifest.xml
+        printf '    <uses-permission android:name="android.permission.INTERNET"/>\n' >> android/app/src/main/AndroidManifest.xml
+        printf '   <application\n' >> android/app/src/main/AndroidManifest.xml
+        printf '        android:label="나의사전"\n' >> android/app/src/main/AndroidManifest.xml
+        printf '        android:name="${applicationName}"\n' >> android/app/src/main/AndroidManifest.xml
+        printf '        android:icon="@mipmap/ic_launcher">\n' >> android/app/src/main/AndroidManifest.xml
+        printf '        <activity\n' >> android/app/src/main/AndroidManifest.xml
+        printf '            android:name=".MainActivity"\n' >> android/app/src/main/AndroidManifest.xml
+        printf '            android:exported="true"\n' >> android/app/src/main/AndroidManifest.xml
+        printf '            android:launchMode="singleTop"\n' >> android/app/src/main/AndroidManifest.xml
+        printf '            android:theme="@style/LaunchTheme"\n' >> android/app/src/main/AndroidManifest.xml
+        printf '            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"\n' >> android/app/src/main/AndroidManifest.xml
+        printf '            android:hardwareAccelerated="true"\n' >> android/app/src/main/AndroidManifest.xml
+        printf '            android:windowSoftInputMode="adjustResize">\n' >> android/app/src/main/AndroidManifest.xml
+        printf '            <meta-data\n' >> android/app/src/main/AndroidManifest.xml
+        printf '              android:name="io.flutter.embedding.android.NormalTheme"\n' >> android/app/src/main/AndroidManifest.xml
+        printf '              android:resource="@style/NormalTheme"\n' >> android/app/src/main/AndroidManifest.xml
+        printf '              />\n' >> android/app/src/main/AndroidManifest.xml
+        printf '            <intent-filter>\n' >> android/app/src/main/AndroidManifest.xml
+        printf '                <action android:name="android.intent.action.MAIN"/>\n' >> android/app/src/main/AndroidManifest.xml
+        printf '                <category android:name="android.intent.category.LAUNCHER"/>\n' >> android/app/src/main/AndroidManifest.xml
+        printf '            </intent-filter>\n' >> android/app/src/main/AndroidManifest.xml
+        printf '        </activity>\n' >> android/app/src/main/AndroidManifest.xml
+        printf '        <meta-data\n' >> android/app/src/main/AndroidManifest.xml
+        printf '            android:name="flutterEmbedding"\n' >> android/app/src/main/AndroidManifest.xml
+        printf '            android:value="2" />\n' >> android/app/src/main/AndroidManifest.xml
+        printf '    </application>\n' >> android/app/src/main/AndroidManifest.xml
+        printf '</manifest>\n' >> android/app/src/main/AndroidManifest.xml
+
+        # Also fix the Gradle version issue
+        sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
+        sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/g' android/app/build.gradle
+
+    - name: Install Dependencies
+      run: flutter pub get
+
+    - name: Build APK
+      run: flutter build apk --release
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-release-apk
+        path: build/app/outputs/flutter-apk/app-release.apk
