@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나만의 사전</title>
+    <style>
+        :root {
+            --primary-color: #673ab7;
+            --primary-light: #d1c4e9;
+            --accent-color: #ff4081;
+            --text-color: #333;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Nanum Gothic', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 480px;
+            height: 90vh;
+            /* Mobile friendly height */
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* AppBar & Tabs */
+        .app-bar {
+            background-color: var(--primary-color);
+            padding: 20px 20px 0 20px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .app-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .tabs {
+            display: flex;
+            width: 100%;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            cursor: pointer;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.6);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: white;
+            border-bottom: 3px solid var(--accent-color);
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Search Box */
+        .search-area {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            border: 2px solid #eee;
+            border-radius: 16px;
+            padding: 8px 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box:focus-within {
+            border-color: var(--primary-color);
+        }
+
+        .search-box input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            padding: 8px;
+            color: var(--text-color);
+            font-family: inherit;
+        }
+
+        .search-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .search-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Results */
+        .result-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 16px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .word-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .word-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary-color);
+        }
+
+        .audio-btn {
+            background: var(--primary-light);
+            color: var(--primary-color);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .audio-btn:hover {
+            background: #b39ddb;
+        }
+
+        .section-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #888;
+            margin: 16px 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Definitions */
+        .def-item {
+            display: flex;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .pos-badge {
+            background: #eee;
+            color: #555;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-right: 10px;
+            height: fit-content;
+            white-space: nowrap;
+        }
+
+        .kor-meaning {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .kor-meaning-sub {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 4px;
+        }
+
+        .eng-def {
+            color: #555;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .example-sent {
+            color: #666;
+            font-style: italic;
+            font-size: 14px;
+            padding-left: 10px;
+            border-left: 3px solid var(--primary-light);
+            margin-top: 4px;
+        }
+
+        /* Mnemonic Card */
+        .mnemonic-card {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border: 2px solid #ffcc80;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mnemonic-card::before {
+            content: "💡";
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 80px;
+            opacity: 0.2;
+            transform: rotate(20deg);
+        }
+
+        .mnemonic-title {
+            font-weight: bold;
+            color: #ef6c00;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* External Link Button */
+        .nikl-btn {
+            display: block;
+            width: 100%;
+            background-color: white;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+
+        .nikl-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Utility */
+        .hidden {
+            display: none;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 40px auto;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            margin-top: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+    <!-- Load External Mnemonics Database -->
+    <script src="mnemonics.js"></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="app-bar">
+            <div class="app-title">나만의 사전</div>
+            <div class="tabs">
+                <div class="tab active" id="tabEng" onclick="switchTab('eng')">영어 검색</div>
+                <div class="tab" id="tabKor" onclick="switchTab('kor')">한국어 검색</div>
+            </div>
+        </div>
+
+        <div class="content" id="contentArea">
+            <!-- Search Input -->
+            <div class="search-area">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="영어 단어를 입력하세요..." onkeypress="handleEnter(event)">
+                    <button class="search-btn" onclick="performSearch()">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"
+                            fill="currentColor">
+                            <path
+                                d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Initial State -->
+            <div id="initialState" class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" height="60" viewBox="0 -960 960 960" width="60" fill="#ddd">
+                    <path
+                        d="M480-120 200-272v-240L40-600l440-240 440 240v320h-80v-276l-160 92v276l-200 168Zm0-176 200-112v-164l-200-116-200 116v164l200 112Zm0-280-120-68 120-64 120 64-120 68Z" />
+                </svg>
+                <p>검색어를 입력하면<br>결과를 보여줍니다.</p>
+            </div>
+
+            <!-- Loading -->
+            <div id="loadingIndicator" class="loading-spinner hidden"></div>
+
+            <!-- Results Container -->
+            <div id="resultsContainer"></div>
+
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'eng'; // 'eng' or 'kor'
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('tabEng').className = tab === 'eng' ? 'tab active' : 'tab';
+            document.getElementById('tabKor').className = tab === 'kor' ? 'tab active' : 'tab';
+
+            const input = document.getElementById('searchInput');
+            input.placeholder = tab === 'eng' ? '영어 단어를 입력하세요...' : '한국어 단어를 입력하세요...';
+            input.value = '';
+            input.focus();
+
+            document.getElementById('resultsContainer').innerHTML = '';
+            document.getElementById('initialState').style.display = 'flex';
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') performSearch();
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            document.getElementById('initialState').style.display = 'none';
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+            document.getElementById('resultsContainer').innerHTML = '';
+
+            try {
+                if (currentTab === 'eng') {
+                    await searchEnglish(query);
+                } else {
+                    await searchKorean(query);
+                }
+            } catch (error) {
+                console.error(error);
+                showError();
+            } finally {
+                document.getElementById('loadingIndicator').classList.add('hidden');
+            }
+        }
+
+        // --- English Search Logic ---
+        async function searchEnglish(query) {
+            // 1. Definition & Audio
+            const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${query}`);
+            const dictData = dictRes.ok ? await dictRes.json() : null;
+
+            // 2. Korean Translation (Google GTX)
+            const transRes = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&dt=bd&q=${encodeURIComponent(query)}`);
+            const transData = await transRes.json();
+
+            // Parse primary translation
+            const primaryTranslation = (transData && transData[0] && transData[0][0]) ? transData[0][0][0] : "";
+
+            // Parse multiple meanings
+            let multiMeanings = [];
+            if (transData && transData[1] && Array.isArray(transData[1])) {
+                transData[1].forEach(posBlock => {
+                    const pos = posBlock[0];
+                    const posKr = mapPos(pos);
+                    // Get top 3 synonyms/meanings
+                    const meanings = posBlock[1].slice(0, 3).join(", ");
+                    multiMeanings.push({ pos: posKr, desc: meanings });
+                });
+            }
+
+            if (multiMeanings.length === 0 && primaryTranslation) {
+                multiMeanings.push({ pos: '뜻', desc: primaryTranslation });
+            }
+
+            renderEnglishResult(query, multiMeanings, dictData, primaryTranslation);
+        }
+
+        function mapPos(pos) {
+            const map = {
+                "noun": "명사", "verb": "동사", "adjective": "형용사", "adverb": "부사",
+                "preposition": "전치사", "conjunction": "접속사", "pronoun": "대명사", "auxiliary verb": "조동사"
+            };
+            return map[pos] || pos;
+        }
+
+        function renderEnglishResult(word, multiMeanings, data, primaryTranslation) {
+            let html = '';
+
+            // 1. Header with Multiple Meanings
+            let audioSrc = '';
+            if (data && data[0].phonetics) {
+                const p = data[0].phonetics.find(p => p.audio && p.audio.length > 0);
+                if (p) audioSrc = p.audio;
+            }
+
+            html += `
+            <div class="result-card">
+                <div class="word-header">
+                    <div class="word-title">${word}</div>
+                    ${audioSrc ? `<button class="audio-btn" onclick="new Audio('${audioSrc}').play()">🔊</button>` : ''}
+                </div>
+        `;
+
+            // Render up to 3 meanings
+            multiMeanings.slice(0, 3).forEach(m => {
+                html += `<div class="kor-meaning-sub"><span style="font-weight:bold; color:#673ab7;">${m.pos}</span> ${m.desc}</div>`;
+            });
+
+            html += `</div>`;
+
+            // 2. Mnemonic (using external MNEMONICS_DATA if available)
+            let mnemonic = '';
+            if (typeof MNEMONICS_DATA !== 'undefined') {
+                mnemonic = MNEMONICS_DATA[word.toLowerCase()] || MNEMONICS_DATA[word.toLowerCase().replace(/[^a-z]/g, '')];
+            }
+
+            if (mnemonic) {
+                html += `
+                <div class="mnemonic-card">
+                    <div class="mnemonic-title">🧠 암기 TIP (경선식 스타일)</div>
+                    <div>${mnemonic}</div>
+                </div>
+            `;
+            }
+
+            // 3. Definitions & Examples
+            if (data && data[0].meanings) {
+                html += `<div class="section-label">뜻 및 예문 (Definitions)</div>`;
+                html += `<div class="result-card">`;
+
+                let count = 0;
+                data[0].meanings.forEach(meaning => {
+                    meaning.definitions.slice(0, 2).forEach(def => {
+                        if (count >= 3) return;
+                        html += `
+                        <div class="def-item">
+                            <div class="pos-badge">${meaning.partOfSpeech}</div>
+                            <div>
+                                <div class="eng-def">${def.definition}</div>
+                                ${def.example ? `<div class="example-sent">"${def.example}"</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                        count++;
+                    });
+                });
+                html += `</div>`;
+            }
+
+            document.getElementById('resultsContainer').innerHTML = html;
+        }
+
+
+        // --- Korean Search Logic ---
+        async function searchKorean(query) {
+            // 1. English Translation
+            const transRes = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=en&dt=t&q=${encodeURIComponent(query)}`);
+            const transData = await transRes.json();
+            const englishTranslation = (transData && transData[0] && transData[0][0]) ? transData[0][0][0] : "Translation not found";
+
+            // 2. Fetch Korean Definition via Wiktionary (Robust Multi-Proxy)
+            let definitions = [];
+            const proxies = [
+                (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+            ];
+
+            const targetUrl = `https://ko.wiktionary.org/wiki/${encodeURIComponent(query)}`;
+
+            for (const proxyGen of proxies) {
+                try {
+                    const proxyUrl = proxyGen(targetUrl);
+                    const proxyRes = await fetch(proxyUrl);
+                    if (!proxyRes.ok) continue;
+
+                    const htmlText = await proxyRes.text();
+                    // Simple validation to ensure we got HTML content
+                    if (!htmlText || htmlText.length < 100) continue;
+
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlText, "text/html");
+
+                    const contentText = doc.getElementById('mw-content-text');
+                    const lists = contentText ? contentText.querySelectorAll('ol') : [];
+
+                    if (lists.length === 0) continue;
+
+                    lists.forEach(ol => {
+                        const items = ol.querySelectorAll('li');
+                        items.forEach(li => {
+                            const text = li.textContent.trim();
+                            // Relaxed filtering
+                            if (text.length > 2 && definitions.length < 3 && !text.includes('어원') && !text.includes('^')) {
+
+                                // Attempt to find POS header (more flexible depth search)
+                                let pos = "뜻";
+                                let prev = ol.previousElementSibling;
+                                let depth = 0;
+                                while (prev && depth < 3) {
+                                    if (prev.tagName.match(/^H[1-6]$/)) {
+                                        pos = prev.textContent.trim().replace(/\[.*?\]/g, '');
+                                        break;
+                                    }
+                                    prev = prev.previousElementSibling;
+                                    depth++;
+                                }
+
+                                definitions.push({ pos: pos, def: text });
+                            }
+                        });
+                    });
+
+                    if (definitions.length > 0) break; // Success
+
+                } catch (e) {
+                    console.warn("Proxy attempt failed", e);
+                }
+            }
+
+            renderKoreanResult(query, englishTranslation, definitions);
+        }
+
+        function renderKoreanResult(korWord, engTranslation, definitions) {
+            let html = '';
+
+            // 1. Translation Result
+            html += `
+            <div class="result-card">
+                <div class="section-label">영어 번역 (English)</div>
+                <div class="word-title">${engTranslation}</div>
+                <div class="example-sent" style="margin-top:10px;">
+                    <a href="#" onclick="switchTab('eng'); document.getElementById('searchInput').value='${engTranslation}'; performSearch(); return false;" style="color: var(--primary-color);">
+                        👉 '${engTranslation}'의 영영사전 뜻 더보기
+                    </a>
+                </div>
+            </div>
+        `;
+
+            // 2. Korean Definitions (Direct View)
+            html += `<div class="result-card">`;
+            html += `<div class="section-label">국어사전 뜻 (Korean) <span style="font-weight:normal; font-size:12px; color:#888;">(위키낱말사전)</span></div>`;
+
+            if (definitions && definitions.length > 0) {
+                definitions.forEach(item => {
+                    html += `
+                    <div style="margin-top:12px; border-bottom:1px solid #eee; padding-bottom:8px;">
+                        <span class="pos-badge">${item.pos}</span>
+                        <div class="def-item" style="margin-top:5px;">
+                            <div class="eng-def" style="color:#333; line-height:1.6;">${item.def}</div>
+                        </div>
+                    </div>
+                `;
+                });
+            } else {
+                html += `<div class="def-item"><div class="eng-def" style="color:#999;">앱 내에서 뜻을 가져오지 못했습니다.<br>아래 네이버/구글 검색 버튼을 이용해주세요.</div></div>`;
+            }
+
+            // Backup Links
+            html += `
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <a href="https://ko.dict.naver.com/#/search?query=${encodeURIComponent(korWord)}" target="_blank" class="nikl-btn" style="background:#03C75A; color:white; border:none; font-size:14px; flex:1;">
+                    네이버 국어사전
+                </a>
+                <a href="https://www.google.com/search?q=${encodeURIComponent(korWord + ' 뜻')}" target="_blank" class="nikl-btn" style="background:#4285F4; color:white; border:none; font-size:14px; flex:1;">
+                    구글 검색
+                </a>
+            </div>
+        </div>`;
+
+            document.getElementById('resultsContainer').innerHTML = html;
+        }
+
+        function showError() {
+            document.getElementById('resultsContainer').innerHTML = `
+            <div class="empty-state">
+                <p>오류가 발생했습니다.<br>네트워크 상태를 확인해주세요.</p>
+            </div>
+        `;
+        }
+
+    </script>
+
+</body>
+
+</html>
