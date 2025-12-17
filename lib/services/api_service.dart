@@ -7,17 +7,54 @@ class ApiService {
   final GoogleTranslator _translator = GoogleTranslator();
   static const String _dictionaryApiUrl = 'https://api.dictionaryapi.dev/api/v2/entries/en';
   static const Duration _timeout = Duration(seconds: 5); // 5초 타임아웃
+  
+  // 0. Offline Backup Data (Fail-safe for demo)
+  static final Map<String, DictionaryResult> _offlineDb = {
+    'apple': DictionaryResult(
+      meanings: [WordDefinition(pos: "명사", def: "사과")],
+      mnemonic: "애플(apple) 파이는 사과 맛이야.",
+    ),
+    'banana': DictionaryResult(
+      meanings: [WordDefinition(pos: "명사", def: "바나나")],
+      mnemonic: "바나나(banana)를 먹으면 나한테 반하나?",
+    ),
+    'school': DictionaryResult(
+      meanings: [WordDefinition(pos: "명사", def: "학교")],
+      mnemonic: "스쿨(school) 버스 타고 학교 가자!",
+    ),
+    'studying': DictionaryResult(
+      meanings: [WordDefinition(pos: "동사", def: "공부하는 중")],
+      mnemonic: "스타(sta)들이 딩(dying)굴 거리며 공부하네",
+    ),
+    'friend': DictionaryResult(
+      meanings: [WordDefinition(pos: "명사", def: "친구")],
+      mnemonic: "프라이(fry) 팬에 계란 굽는 내 친구(friend)!",
+    ),
+    'love': DictionaryResult(
+      meanings: [WordDefinition(pos: "동사", def: "사랑하다")],
+      mnemonic: "너를(lo) 브(ve)이! 사랑해~",
+    ),
+    'gloomy': DictionaryResult(
+      meanings: [WordDefinition(pos: "형용사", def: "우울한")],
+      mnemonic: "구름이(gloomy) 잔뜩 껴서 우울해..",
+    ),
+  };
 
   /// Searches for an English word with Timeout protection
   Future<DictionaryResult> searchEnglish(String query) async {
+    String lowerQuery = query.toLowerCase().trim();
+    
     try {
-      // 1. API Call with Timeout
+      // 1. API Call with Timeout (Try Online First)
       final response = await http.get(Uri.parse('$_dictionaryApiUrl/$query'))
           .timeout(_timeout);
       
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         final entry = data[0];
+        
+        // ... (Audio, Meanings, Parsing logic same as before) ...
+        // Note: Shortened for brevity in diff, but logic remains.
         
         // Audio
         String? audioUrl;
@@ -30,7 +67,6 @@ class ApiService {
           }
         }
 
-        // Meanings & Synonyms
         List<WordDefinition> meanings = [];
         Set<String> synonymsSet = {};
 
@@ -43,17 +79,12 @@ class ApiService {
               definition = m['definitions'][0]['definition'];
             }
 
-            // Translate definition (Minimize translation calls to prevent hanging)
             if (definition.isNotEmpty) {
               try {
-                // Translation might hang, so we limit it strictly
-                var translation = await _translator.translate(definition, to: 'ko')
-                    .timeout(_timeout);
-                var posTranslation = await _translator.translate(partOfSpeech, to: 'ko')
-                    .timeout(const Duration(seconds: 2)); // Short timeout for POS
+                var translation = await _translator.translate(definition, to: 'ko').timeout(_timeout);
+                var posTranslation = await _translator.translate(partOfSpeech, to: 'ko').timeout(const Duration(seconds: 2));
                 meanings.add(WordDefinition(pos: posTranslation.text, def: translation.text));
               } catch (e) {
-                // If translation fails/times out, use english definition
                 meanings.add(WordDefinition(pos: partOfSpeech, def: definition));
               }
             }
@@ -61,8 +92,6 @@ class ApiService {
             if (m['synonyms'] != null) {
                m['synonyms'].forEach((s) => synonymsSet.add(s.toString()));
             }
-            
-            // Limit to 2 meanings to speed up
             if (meanings.length >= 2) break; 
           }
         }
@@ -77,10 +106,15 @@ class ApiService {
         );
       } 
     } catch (e) {
-      print("Error fetching English word: $e");
+      print("Online search failed: $e, trying offline...");
+    }
+    
+    // 2. Offline Fallback (If Online failed/timeout)
+    if (_offlineDb.containsKey(lowerQuery)) {
+      return _offlineDb[lowerQuery]!;
     }
 
-    // Fallback: Just translate the word itself
+    // 3. Fallback: Google Translate (Last resort)
     try {
       var translation = await _translator.translate(query, to: 'ko').timeout(_timeout);
       return DictionaryResult(
@@ -89,26 +123,20 @@ class ApiService {
       );
     } catch (e) {
       return DictionaryResult(
-        meanings: [WordDefinition(pos: "오류", def: "검색에 실패했습니다. ($e)")],
-        mnemonic: "인터넷 연결을 확인해주세요.",
+        meanings: [WordDefinition(pos: "오류", def: "인터넷 연결을 확인해주세요.")],
+        mnemonic: "오프라인 단어(apple 등)는 검색 가능합니다.",
       );
     }
   }
 
   String _generateMnemonic(String word) {
     word = word.toLowerCase();
-    final Map<String, String> mockMnemonics = {
-      'gloomy': '구름이(gloomy) 잔뜩 껴서 우울해..',
-      'famine': '빼(fa) 밀리(mi) 네(ne) 밥 다 먹어서 기근이 왔어!',
-      'comet': '코 밑(comet)으로 혜성이 지나가네!',
-      'voca': '보카(voca)치오가 단어를 외우네!',
-      'apple': '애플(apple) 파이는 사과 맛이야.',
-      'banana': '바나나(banana)를 먹으면 나한테 반하나?',
-    };
-
-    if (mockMnemonics.containsKey(word)) {
-      return mockMnemonics[word]!;
+    
+    if (_offlineDb.containsKey(word)) {
+      return _offlineDb[word]!.mnemonic!;
     }
+    
+    // Generic placeholder for other words
     return "단어를 소리나는 대로 읽으며 재밌는 상황을 상상해보세요! ($word)";
   }
 
