@@ -27,6 +27,11 @@ jobs:
     - name: Repair Project Structure
       run: flutter create .
 
+    - name: Fix Android Version
+      run: |
+        sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
+        sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/g' android/app/build.gradle
+
     - name: Install Dependencies
       run: flutter pub get
 
