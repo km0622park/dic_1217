@@ -27,10 +27,17 @@ jobs:
     - name: Repair Project Structure
       run: flutter create .
 
-    - name: Fix Android Version
+    - name: Fix Android Manifest and Gradle
       run: |
+        # 1. Min SDK Version Fix
         sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
         sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/g' android/app/build.gradle
+        
+        # 2. Add Internet Permission (Critical for Release builds)
+        sed -i '/<application/i <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
+        
+        # 3. Change App Name to "나의사전"
+        sed -i 's/android:label="antigravity_dictionary"/android:label="나의사전"/g' android/app/src/main/AndroidManifest.xml
 
     - name: Install Dependencies
       run: flutter pub get
