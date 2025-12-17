@@ -57,6 +57,7 @@ class ApiService {
         }
         
       
+      
         // 3. Generate Mnemonic
         String mnemonic = _generateMnemonic(query);
 
@@ -72,11 +73,19 @@ class ApiService {
     }
 
     // Fallback if API fails or word not found
-    var translation = await _translator.translate(query, to: 'ko');
-    return DictionaryResult(
-      meanings: [WordDefinition(pos: "번역", def: translation.text)],
-      mnemonic: "이 단어는 특별한 암기법이 없네요. 소리내어 3번 읽어보세요!",
-    );
+    try {
+      var translation = await _translator.translate(query, to: 'ko');
+      return DictionaryResult(
+        meanings: [WordDefinition(pos: "번역", def: translation.text)],
+        mnemonic: "이 단어는 특별한 암기법이 없네요. 소리내어 3번 읽어보세요!",
+      );
+    } catch (e) {
+      // Translation also failed (likely no internet)
+      return DictionaryResult(
+        meanings: [WordDefinition(pos: "오류", def: "인터넷 연결을 확인해주세요.")],
+        mnemonic: "오류가 발생했습니다.",
+      );
+    }
   }
 
   /// Generates a simple mnemonic for elementary students.
