@@ -13,7 +13,7 @@ class AntigravityApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Antigravity Dictionary',
+      title: '나의사전',
       theme: ThemeData(
         primarySwatch: Colors.amber, // Bright and friendly
         scaffoldBackgroundColor: const Color(0xFFFFF9C4), // Light yellow background
@@ -113,7 +113,7 @@ class _DictionaryHomeState extends State<DictionaryHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Antigravity Dictionary'),
+        title: const Text('나의사전'),
         centerTitle: true,
       ),
       body: Padding(
